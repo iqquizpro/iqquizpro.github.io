@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  landing:
+    build: .
+    container_name: landing
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      # Enable Traefik for this service
+      - "traefik.enable=true"
+
+      # HTTP router for both domains
+      - "traefik.http.routers.landing.rule=Host(`iqquizpro.my.id`) || Host(`www.iqquizpro.my.id`)"
+      - "traefik.http.routers.landing.entrypoints=web"
+      - "traefik.http.routers.landing.middlewares=redirect-to-https"
+
+      # HTTPS router for both domains
+      - "traefik.http.routers.landing-secure.rule=Host(`iqquizpro.my.id`) || Host(`www.iqquizpro.my.id`)"
+      - "traefik.http.routers.landing-secure.entrypoints=websecure"
+      - "traefik.http.routers.landing-secure.tls=true"
+      - "traefik.http.routers.landing-secure.tls.certresolver=cloudflare"
+
+      # Service configuration
+      - "traefik.http.services.landing.loadbalancer.server.port=80"
+
+      # Middleware for HTTPS redirect
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+
+networks:
+  proxy:
+    external: true
